@@ -60,6 +60,10 @@ int *pontuacao_max_para_cada_numero_jogadas;
 
 unsigned long long count_branches;
 unsigned long long qtd_solucoes_validas;
+unsigned long long qtd_bound_pontuacao_max;//qtd de retornos por pontuação máxima não pode melhorar
+unsigned long long qtd_bound_null_black_visited;//qtd de retornos por vértice nulo ou prto ou visitado
+unsigned long long qtd_bound_grau_vizinho_1;//qtd de retornos por grau de algum vizinho == 1
+
 
 //parte da busca em profundidade p/ verificar a conexÃ£o do grafo
 int vertex_atingidos;
@@ -189,16 +193,21 @@ bool grafo_conectado(vertex *next, vertex* atual){
 
 /* Verifica as condicoees de insercao do next*/
 bool insert_conditions(vertex *atual, vertex *next, vertex *esq, vertex *cima, vertex *dir, vertex *baixo){
-	if (next == NULL || next->black || next->visited || (next == origin && vertex_restantes > 1))
+	if (next == NULL || next->black || next->visited || (next == origin && vertex_restantes > 1)){
+		qtd_bound_null_black_visited++;
 		return false;
-//	if (!pontuacao_atual_pode_melhorar())
-//		return false;
-	if (!vizinhos_atual_tem_grau_2_apos_insercao_next(atual, next, esq, cima, dir, baixo))
+	}
+	if (!pontuacao_atual_pode_melhorar()){
+		qtd_bound_pontuacao_max++;
 		return false;
-//	if (!grafo_conectado(next, atual)){
-//		printf("grafo n conectado");
-//		return false;
-//	}
+	}
+	if (!vizinhos_atual_tem_grau_2_apos_insercao_next(atual, next, esq, cima, dir, baixo)){
+		qtd_bound_grau_vizinho_1++;
+		return false;
+	}
+	//if (!grafo_conectado(next, atual)){
+	//	return false;
+	//}
 
 
 	return true;
@@ -340,6 +349,9 @@ void print_solution(float time_elapsed){
 		printf("\nTempo de processamento: 0.000 segundos\n");
 	}
 	printf("\nQuantidade de solucoes encontradas: %llu\n", qtd_solucoes_validas);
+	printf("\nQtd de retornos por melhor pontuação alcançada: %llu\n", qtd_bound_pontuacao_max);
+	printf("\nQtd de retornos por vértice preto null ou visitado: %llu\n", qtd_bound_null_black_visited);
+	printf("\nQtd de retornos por grau de algum vizinho == 1: %llu\n", qtd_bound_grau_vizinho_1);
 }
 
 void init_data(){
@@ -354,14 +366,18 @@ void init_data(){
 
 	stack = (vertex**) malloc(sizeof(vertex*)*m_*n_*4);
 	head_stack = -1;
-	count_branches = 0;
+
 	vertex_restantes = total_free_vertexes;
 
 	//Parte da busca em profundidade
 	vertex_visitados_profundidade = (vertex**) malloc(sizeof(vertex*)*total_free_vertexes);
 	vertex_atingidos = 0;
 
+	count_branches = 0;
 	qtd_solucoes_validas = 0;
+	qtd_bound_pontuacao_max = 0;
+	qtd_bound_null_black_visited = 0;
+	qtd_bound_grau_vizinho_1 = 0;
 
 	config_pontuacao_max();
 
